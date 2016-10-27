@@ -1,0 +1,17 @@
+<?php /** @var umiTemplaterPHP $this */ ?>
+<?php /** @var array $variables */ ?>
+
+    <form action="<?= $variables['purchase']['purchasing']['action'] ?>" method="get">
+        <input type="hidden" name="sum" value="<?= $variables['purchase']['purchasing']['sum'] ?>" />
+        <input type="hidden" name="account" value="<?= $variables['purchase']['purchasing']['account'] ?>" />
+        <input type="hidden" name="desc" value="<?= $variables['purchase']['purchasing']['desc'] ?>" />
+
+        <div>
+            <?= $this->translate('payment-redirect-text') ?> Unitpay.
+        </div>
+
+        <div>
+            <input type="submit" value="<?= $this->translate('pay') ?>" class="button big"/>
+        </div>
+    </form>
+<?=$this->render(array(), 'emarket/payment/form-send')?>
