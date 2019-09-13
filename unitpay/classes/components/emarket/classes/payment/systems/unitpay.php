@@ -13,16 +13,24 @@ class unitpayPayment extends payment
         $this->order->order();
 
         $public_key = $this->object->getValue('public_key');
+        $secret_key = $this->object->getValue('secret_key');
         $sum = (float) $this->order->getActualPrice();
         $account = $this->order->getId();
         $desc = 'Заказ #' . $this->order->getNumber();
+        $signature = hash('sha256', join('{up}', array(
+            $account,
+            $desc,
+            $sum,
+            $secret_key
+        )));
 
         $payment_url = 'https://unitpay.ru/pay/' . $public_key;
         $params = array(
-            'action'    =>  $payment_url,
+            'formAction'    =>  $payment_url,
             'sum'           =>  $sum,
             'account'       =>  $account,
-            'desc'          =>  $desc
+            'desc'          =>  $desc,
+            'signature'     =>  $signature
         );
 
         $this->order->setPaymentStatus('initialized');
