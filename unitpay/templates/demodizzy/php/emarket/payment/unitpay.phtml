@@ -1,17 +1,17 @@
 <?php /** @var umiTemplaterPHP $this */ ?>
 <?php /** @var array $variables */ ?>
 
-    <form action="<?= $variables['purchase']['purchasing']['action'] ?>" method="get">
-        <input type="hidden" name="sum" value="<?= $variables['purchase']['purchasing']['sum'] ?>" />
-        <input type="hidden" name="account" value="<?= $variables['purchase']['purchasing']['account'] ?>" />
-        <input type="hidden" name="desc" value="<?= $variables['purchase']['purchasing']['desc'] ?>" />
+<form action="<?= $variables['purchasing']['formAction']  ?>" method="get">
+    <input type="hidden" name="sum" value="<?= $variables['purchasing']['sum'] ?>"/>
+    <input type="hidden" name="account" value="<?= $variables['purchasing']['account'] ?>"/>
+    <input type="hidden" name="desc" value="<?= $variables['purchasing']['desc'] ?>"/>
+    <input type="hidden" name="signature" value="<?= $variables['purchasing']['signature'] ?>"/>
 
-        <div>
-            <?= $this->translate('payment-redirect-text') ?> Unitpay.
-        </div>
+    <div>
+        <?= $this->translate('payment_redirect_text') ?> Unitpay.
+    </div>
 
-        <div>
-            <input type="submit" value="<?= $this->translate('pay') ?>" class="button big"/>
-        </div>
-    </form>
-<?=$this->render(array(), 'emarket/payment/form-send')?>
+    <div>
+        <input type="submit" value="<?= $this->translate('pay') ?>" class="button big"/>
+    </div>
+</form>
