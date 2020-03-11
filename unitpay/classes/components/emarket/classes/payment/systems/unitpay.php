@@ -12,6 +12,7 @@ class unitpayPayment extends payment
 
         $this->order->order();
 
+        $domain = $this->object->getValue('unitpay_domain');
         $public_key = $this->object->getValue('public_key');
         $secret_key = $this->object->getValue('secret_key');
         $sum = (float) $this->order->getActualPrice();
@@ -24,7 +25,7 @@ class unitpayPayment extends payment
             $secret_key
         )));
 
-        $payment_url = 'https://unitpay.ru/pay/' . $public_key;
+        $payment_url = "https://$domain/pay/" . $public_key;
         $params = array(
             'formAction'    =>  $payment_url,
             'sum'           =>  $sum,
