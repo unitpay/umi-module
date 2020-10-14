@@ -21,8 +21,10 @@ class unitpayPayment extends payment
         $sum = (float) $this->order->getActualPrice();
         $account = $this->order->getId();
         $desc = 'Заказ #' . $this->order->getNumber();
+        $currency = (\UmiCms\Service::CurrencyFacade())->getCurrent()->getISOCode();
         $signature = hash('sha256', join('{up}', array(
             $account,
+            $currency,
             $desc,
             $sum,
             $secret_key
