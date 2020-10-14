@@ -2,6 +2,9 @@
 
 class unitpayPayment extends payment
 {
+
+    private $taxRates = [];
+
     public function validate() {
         return true;
     }
@@ -25,13 +28,26 @@ class unitpayPayment extends payment
             $secret_key
         )));
 
+        $email = customer::get()->getEmail();
+        $phone = preg_replace('/\D/', '', customer::get()->getPhone());
+
+        $orderItems = '';
+
+        if ($email || $phone){
+            $orderItems = $this->getCashItems($this->order);
+        }
+
         $payment_url = "https://$domain/pay/" . $public_key;
         $params = array(
             'formAction'    =>  $payment_url,
             'sum'           =>  $sum,
             'account'       =>  $account,
             'desc'          =>  $desc,
-            'signature'     =>  $signature
+            'signature'     =>  $signature,
+            'email'         =>  $email,
+            'phone'         =>  $phone,
+            'items'         =>  $orderItems
+
         );
 
         $this->order->setPaymentStatus('initialized');
@@ -40,6 +56,62 @@ class unitpayPayment extends payment
             def_module::loadTemplates('emarket/payment/unitpay/' . $template, 'form_block');
 
         return def_module::parseTemplate($form_block, $params);
+    }
+
+    private function getCashItems()
+    {
+
+        $currencyCode = (\UmiCms\Service::CurrencyFacade())->getCurrent()->getISOCode();
+
+        $orderProducts = array_map(function ($item) use ($currencyCode) {
+
+            return [
+                'name'     => $item->getName(),
+                'count'    => $item->getAmount(),
+                'price'    => round($item->getBasketPrice(), 2),
+                'currency' => $currencyCode,
+                'type'     => 'commodity',
+                'nds'      => $this->getTaxRates($item->getTaxRateId()),
+            ];
+        }, $this->order->getItems());
+
+        if ($this->order->getDeliveryId() && ($this->order->getDeliveryPrice() > 0)) {
+            $delivery = delivery::get($this->order->getDeliveryId());
+
+            $orderProducts[] = array(
+                'name'     => $delivery->getName(),
+                'count'    => 1,
+                'price'    => round($delivery->getDeliveryPrice(), 2),
+                'currency' => $currencyCode,
+                'type'     => 'service',
+                'nds'      => $this->getTaxRates($delivery->getTaxRateId()),
+            );
+        }
+
+        return base64_encode(json_encode($orderProducts));
+    }
+
+    private function getTaxRates($idTaxRate){
+        if (!isset($this->taxRates[$idTaxRate])){
+            $taxRateFacade = \UmiCms\Service::get('TaxRateVat');;
+            $this->taxRates[$idTaxRate] = $taxRateFacade->get($idTaxRate)->getRate();
+        }
+
+        switch ($this->taxRates[$idTaxRate]){
+            case  '10':
+                $vat = 'vat10';
+                break;
+            case '20':
+                $vat = 'vat20';
+                break;
+            case '0':
+                $vat = 'vat0';
+                break;
+            default:
+                $vat = 'none';
+        }
+
+        return $vat;
     }
 
     public function poll() {
@@ -176,7 +248,5 @@ class unitpayPayment extends payment
         $buffer->push($result);
         $buffer->end();
     }
-
-
 
 };
