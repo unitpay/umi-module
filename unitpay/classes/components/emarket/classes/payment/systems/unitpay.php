@@ -48,7 +48,8 @@ class unitpayPayment extends payment
             'signature'     =>  $signature,
             'email'         =>  $email,
             'phone'         =>  $phone,
-            'items'         =>  $orderItems
+            'items'         =>  $orderItems,
+            'currency'      =>  $currency
 
         );
 
