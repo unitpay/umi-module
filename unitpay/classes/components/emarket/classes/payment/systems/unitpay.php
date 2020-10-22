@@ -167,13 +167,7 @@ class unitpayPayment extends payment
 
     function check( $params )
     {
-        $cmsController = cmsController::getInstance();
-        $emarket = $cmsController->getModule('emarket');
-        /**
-         * @var iUmiObject $currency
-         */
-        $currency = $emarket->getDefaultCurrency();
-        $currency = ($currency instanceof iUmiObject) ? $currency->getValue('codename') : 'RUB';
+        $currency = (\UmiCms\Service::CurrencyFacade())->getCurrent()->getISOCode();
 
         if ((float)$this->order->getActualPrice() != (float)$params['orderSum']) {
             $result = array('error' =>
@@ -193,13 +187,7 @@ class unitpayPayment extends payment
     }
     function pay( $params )
     {
-        $cmsController = cmsController::getInstance();
-        $emarket = $cmsController->getModule('emarket');
-        /**
-         * @var iUmiObject $currency
-         */
-        $currency = $emarket->getDefaultCurrency();
-        $currency = ($currency instanceof iUmiObject) ? $currency->getValue('codename') : 'RUB';
+        $currency = (\UmiCms\Service::CurrencyFacade())->getCurrent()->getISOCode();
 
         if ((float)$this->order->getActualPrice() != (float)$params['orderSum']) {
             $result = array('error' =>
