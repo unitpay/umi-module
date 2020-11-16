@@ -1,3 +1,4 @@
+
 <?php /** @var umiTemplaterPHP $this */ ?>
 <?php /** @var array $variables */ ?>
 
@@ -6,7 +7,16 @@
     <input type="hidden" name="account" value="<?= $variables['purchasing']['account'] ?>"/>
     <input type="hidden" name="desc" value="<?= $variables['purchasing']['desc'] ?>"/>
     <input type="hidden" name="signature" value="<?= $variables['purchasing']['signature'] ?>"/>
-
+    <input type="hidden" name="currency" value="<?= $variables['purchasing']['currency'] ?>"/>
+    <? if ($variables['purchasing']['email']):?>
+        <input type="hidden" name="customerEmail" value="<?= $variables['purchasing']['email'] ?>"/>
+    <?endif;?>
+    <? if ($variables['purchasing']['phone']):?>
+        <input type="hidden" name="customerPhone" value="<?= $variables['purchasing']['phone'] ?>"/>
+    <?endif;?>
+    <? if ($variables['purchasing']['items']):?>
+        <input type="hidden" name="cashItems" value="<?= $variables['purchasing']['items'] ?>"/>
+    <?endif;?>
     <div>
         <?= $this->translate('payment_redirect_text') ?> Unitpay.
     </div>

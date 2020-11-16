@@ -2,6 +2,9 @@
 
 class unitpayPayment extends payment
 {
+
+    private $taxRates = [];
+
     public function validate() {
         return true;
     }
@@ -18,12 +21,23 @@ class unitpayPayment extends payment
         $sum = (float) $this->order->getActualPrice();
         $account = $this->order->getId();
         $desc = 'Заказ #' . $this->order->getNumber();
+        $currency = (\UmiCms\Service::CurrencyFacade())->getCurrent()->getISOCode();
         $signature = hash('sha256', join('{up}', array(
             $account,
+            $currency,
             $desc,
             $sum,
             $secret_key
         )));
+
+        $email = customer::get()->getEmail();
+        $phone = preg_replace('/\D/', '', customer::get()->getPhone());
+
+        $orderItems = '';
+
+        if ($email || $phone){
+            $orderItems = $this->getCashItems($this->order);
+        }
 
         $payment_url = "https://$domain/pay/" . $public_key;
         $params = array(
@@ -31,7 +45,12 @@ class unitpayPayment extends payment
             'sum'           =>  $sum,
             'account'       =>  $account,
             'desc'          =>  $desc,
-            'signature'     =>  $signature
+            'signature'     =>  $signature,
+            'email'         =>  $email,
+            'phone'         =>  $phone,
+            'items'         =>  $orderItems,
+            'currency'      =>  $currency
+
         );
 
         $this->order->setPaymentStatus('initialized');
@@ -40,6 +59,62 @@ class unitpayPayment extends payment
             def_module::loadTemplates('emarket/payment/unitpay/' . $template, 'form_block');
 
         return def_module::parseTemplate($form_block, $params);
+    }
+
+    private function getCashItems()
+    {
+
+        $currencyCode = (\UmiCms\Service::CurrencyFacade())->getCurrent()->getISOCode();
+
+        $orderProducts = array_map(function ($item) use ($currencyCode) {
+
+            return [
+                'name'     => $item->getName(),
+                'count'    => $item->getAmount(),
+                'price'    => round($item->getBasketPrice(), 2),
+                'currency' => $currencyCode,
+                'type'     => 'commodity',
+                'nds'      => $this->getTaxRates($item->getTaxRateId()),
+            ];
+        }, $this->order->getItems());
+
+        if ($this->order->getDeliveryId() && ($this->order->getDeliveryPrice() > 0)) {
+            $delivery = delivery::get($this->order->getDeliveryId());
+
+            $orderProducts[] = array(
+                'name'     => $delivery->getName(),
+                'count'    => 1,
+                'price'    => round($delivery->getDeliveryPrice(), 2),
+                'currency' => $currencyCode,
+                'type'     => 'service',
+                'nds'      => $this->getTaxRates($delivery->getTaxRateId()),
+            );
+        }
+
+        return base64_encode(json_encode($orderProducts));
+    }
+
+    private function getTaxRates($idTaxRate){
+        if (!isset($this->taxRates[$idTaxRate])){
+            $taxRateFacade = \UmiCms\Service::get('TaxRateVat');;
+            $this->taxRates[$idTaxRate] = $taxRateFacade->get($idTaxRate)->getRate();
+        }
+
+        switch ($this->taxRates[$idTaxRate]){
+            case  '10':
+                $vat = 'vat10';
+                break;
+            case '20':
+                $vat = 'vat20';
+                break;
+            case '0':
+                $vat = 'vat0';
+                break;
+            default:
+                $vat = 'none';
+        }
+
+        return $vat;
     }
 
     public function poll() {
@@ -92,13 +167,7 @@ class unitpayPayment extends payment
 
     function check( $params )
     {
-        $cmsController = cmsController::getInstance();
-        $emarket = $cmsController->getModule('emarket');
-        /**
-         * @var iUmiObject $currency
-         */
-        $currency = $emarket->getDefaultCurrency();
-        $currency = ($currency instanceof iUmiObject) ? $currency->getValue('codename') : 'RUB';
+        $currency = (\UmiCms\Service::CurrencyFacade())->getCurrent()->getISOCode();
 
         if ((float)$this->order->getActualPrice() != (float)$params['orderSum']) {
             $result = array('error' =>
@@ -118,13 +187,7 @@ class unitpayPayment extends payment
     }
     function pay( $params )
     {
-        $cmsController = cmsController::getInstance();
-        $emarket = $cmsController->getModule('emarket');
-        /**
-         * @var iUmiObject $currency
-         */
-        $currency = $emarket->getDefaultCurrency();
-        $currency = ($currency instanceof iUmiObject) ? $currency->getValue('codename') : 'RUB';
+        $currency = (\UmiCms\Service::CurrencyFacade())->getCurrent()->getISOCode();
 
         if ((float)$this->order->getActualPrice() != (float)$params['orderSum']) {
             $result = array('error' =>
@@ -176,7 +239,5 @@ class unitpayPayment extends payment
         $buffer->push($result);
         $buffer->end();
     }
-
-
 
 };
